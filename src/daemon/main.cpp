@@ -98,6 +98,8 @@ int main(int argc, char const * argv[])
       command_line::add_arg(core_settings, daemon_args::arg_max_log_file_size);
       command_line::add_arg(core_settings, daemon_args::arg_max_log_files);
       command_line::add_arg(core_settings, daemon_args::arg_max_concurrency);
+      command_line::add_arg(core_settings, daemon_args::arg_zmq_rpc_bind_ip);
+      command_line::add_arg(core_settings, daemon_args::arg_zmq_rpc_bind_port);
 
       daemonizer::init_options(hidden_options, visible_options);
       daemonize::daemon::init_options(core_settings, hidden_options);
