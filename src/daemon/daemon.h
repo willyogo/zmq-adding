@@ -64,6 +64,8 @@ public:
   void stop();
 
 private:
+    std::string zmq_rpc_bind_address;
+    std::string zmq_rpc_bind_port;
 
   boost::program_options::variables_map vm;
 

@@ -114,6 +114,8 @@ daemon::daemon(boost::program_options::variables_map vm_) :
   MGINFO_BLUE("Initializing daemon objects...");
 
   MGINFO("- cryptonote protocol");
+  zmq_rpc_bind_port = command_line::get_arg(vm, daemon_args::arg_zmq_rpc_bind_port);
+  zmq_rpc_bind_address = command_line::get_arg(vm, daemon_args::arg_zmq_rpc_bind_ip);
   if (!protocol->init(vm))
     throw std::runtime_error("Failed to initialize cryptonote protocol.");
 
