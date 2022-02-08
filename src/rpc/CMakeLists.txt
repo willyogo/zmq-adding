@@ -53,7 +53,7 @@ set(daemon_rpc_server_private_headers
 
 add_library(daemon_rpc_server
   ${daemon_rpc_server_sources}
-  ${daemon_rpc_server_private_headers})
+  ${daemon_rpc_server_private_headers}
   http_server.cpp
   lmq_server.cpp
   )
