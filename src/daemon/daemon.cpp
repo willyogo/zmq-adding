@@ -329,8 +329,74 @@ bool daemon::run(bool interactive)
       rpc_commands = std::make_unique<daemonize::command_server>(*rpc);
       rpc_commands->start_handling([this] { stop(); });
     }
-
+cryptonote::rpc::DaemonHandler rpc_daemon_handler(mp_internals->core.get(), mp_internals->p2p.get());
+    cryptonote::rpc::ZmqServer zmq_server(rpc_daemon_handler);
     MGINFO_GREEN("Starting up main network");
+    if (!zmq_server.addTCPSocket(zmq_rpc_bind_address, zmq_rpc_bind_port))
+    {
+      LOG_ERROR(std::string("Failed to add TCP Socket (") + zmq_rpc_bind_address
+          + ":" + zmq_rpc_bind_port + ") to ZMQ RPC Server");
+
+      if (rpc_commands)
+        rpc_commands->stop_handling();
+
+      for(auto& rpc : mp_internals->rpcs)
+        rpc->stop();
+
+      return false;
+    }
+
+    MINFO("Starting ZMQ server...");
+    zmq_server.run();
+
+    MINFO(std::string("ZMQ server started at ") + zmq_rpc_bind_address
+          + ":" + zmq_rpc_bind_port + ".");
+
+    mp_internals->p2p.run(); // blocks until p2p goes down
+
+    if (rpc_commands)
+      rpc_commands->stop_handling();
+
+    zmq_server.stop();
+
+    for(auto& rpc : mp_internals->rpcs)
+      rpc->stop();
+    MGINFO("Node stopped.");
+    return true;
+  }
+  catch (std::exception const & ex)
+  {
+    MFATAL("Uncaught exception! " << ex.what());
+    return false;
+  }
+  catch (...)
+  {
+    MFATAL("Uncaught exception!");
+    return false;
+  }
+}
+
+void t_daemon::stop()
+{
+  if (nullptr == mp_internals)
+  {
+    throw std::runtime_error{"Can't stop stopped daemon"};
+  }
+  mp_internals->p2p.stop();
+  for(auto& rpc : mp_internals->rpcs)
+    rpc->stop();
+
+  mp_internals.reset(nullptr); // Ensure resources are cleaned up before we return
+}
+
+void t_daemon::stop_p2p()
+{
+  if (nullptr == mp_internals)
+  {
+    throw std::runtime_error{"Can't send stop signal to a stopped daemon"};
+  }
+  mp_internals->p2p.get().send_stop_signal();
+}
 
 #ifdef ENABLE_SYSTEMD
     sd_notify(0, ("READY=1\nSTATUS=" + core->get_status_string()).c_str());

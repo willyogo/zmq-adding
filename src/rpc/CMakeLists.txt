@@ -40,8 +40,20 @@ add_library(rpc
   bootstrap_daemon.cpp
   core_rpc_server.cpp
   )
+ 
+set(daemon_rpc_server_sources
+  daemon_handler.cpp
+  zmq_server.cpp)
+
+set(daemon_rpc_server_private_headers
+  message.h
+  daemon_messages.h
+  daemon_handler.h
+  zmq_server.h)
 
 add_library(daemon_rpc_server
+  ${daemon_rpc_server_sources}
+  ${daemon_rpc_server_private_headers})
   http_server.cpp
   lmq_server.cpp
   )
