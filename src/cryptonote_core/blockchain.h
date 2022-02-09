@@ -68,7 +68,6 @@
 struct sqlite3;
 namespace master_nodes { class master_node_list; };
 namespace tools { class Notify; }
-using namespace cryptonote;
 namespace cryptonote
 {
   struct block_and_checkpoint
@@ -172,10 +171,13 @@ namespace cryptonote
      * @return the version
      */
 
-    cryptonote::network_type nettype = m_core.get_nettype();
+    // cryptonote::network_type nettype = m_core.get_nettype();
     const uint64_t height = m_db->height();
 
-    uint8_t get_current_hard_fork_version() const { return cryptonote::get_network_version(nettype, height); }
+    uint8_t get_current_hard_fork_version() const { 
+      
+      return get_network_version(std::optional<uint64_t> height);
+      }
 
     bool get_blocks_only(uint64_t start_offset, size_t count, std::vector<block>& blocks, std::vector<cryptonote::blobdata> *txs = nullptr) const;
     /**
