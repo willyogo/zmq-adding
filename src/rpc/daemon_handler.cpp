@@ -331,7 +331,7 @@ if (!chain.find_blockchain_supplement(req.known_hashes, res.hashes, res.start_he
         if (!res.error_details.empty()) res.error_details += " and ";
         res.error_details = "tx has an invalid type";
       }
-      if (tvc.m_key_image_locked_by_snode)
+      if (tvc.m_key_image_locked_by_mnode)
       {
         if (!res.error_details.empty()) res.error_details += " and ";
         res.error_details = "tx uses outputs that are locked by the master node network";

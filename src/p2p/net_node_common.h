@@ -97,6 +97,12 @@ namespace nodetool
     {
 
     }
+
+    virtual uint64_t get_connections_count()    
+    {
+      return false;
+    }
+    
     virtual bool for_connection(const boost::uuids::uuid&, std::function<bool(t_connection_context&,peerid_type,uint32_t)> f)
     {
       return false;

@@ -281,7 +281,14 @@ namespace cryptonote
       * @return true if the transaction was accepted, false otherwise
       */
      bool handle_incoming_tx(const blobdata& tx_blob, tx_verification_context& tvc, bool keeped_by_block, bool relayed, bool do_not_relay);
-
+     
+     /**
+      * @copydoc tx_memory_pool::get_transactions_count
+      *
+      * @note see tx_memory_pool::get_transactions_count
+      */
+     size_t get_pool_transactions_count() const;
+     
      /**
       * @brief handles a list of incoming transactions
       *

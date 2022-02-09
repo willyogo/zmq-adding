@@ -52,7 +52,7 @@ namespace epee
 		return ret_val; \
 	}
 
-#define AUTO_VAL_INIT(v)   std::value_initialized<decltype(v)>()
+#define AUTO_VAL_INIT(v) 
 
 
 namespace misc_utils

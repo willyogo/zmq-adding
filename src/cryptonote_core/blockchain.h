@@ -158,6 +158,20 @@ namespace cryptonote
      * @return true on success, false if any uninitialization steps fail
      */
     bool deinit();
+    
+    /**
+     * @brief get difficulty target based on chain and hardfork version
+     *
+     * @return difficulty target
+     */
+    uint64_t get_difficulty_target() const;
+
+    /**
+     * @brief gets the current hardfork version in use/voted for
+     *
+     * @return the version
+     */
+    uint8_t get_current_hard_fork_version() const { return m_hardfork->get_current_version(); }
 
     bool get_blocks_only(uint64_t start_offset, size_t count, std::vector<block>& blocks, std::vector<cryptonote::blobdata> *txs = nullptr) const;
     /**
