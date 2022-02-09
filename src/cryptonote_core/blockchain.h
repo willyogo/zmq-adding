@@ -171,7 +171,11 @@ namespace cryptonote
      *
      * @return the version
      */
-    uint8_t get_current_hard_fork_version() const { return m_hardfork->get_current_version(); }
+
+    cryptonote::network_type nettype = m_core.get_nettype();
+    const uint64_t height = m_db->height();
+
+    uint8_t get_current_hard_fork_version() const { return cryptonote::get_network_version(nettype, height); }
 
     bool get_blocks_only(uint64_t start_offset, size_t count, std::vector<block>& blocks, std::vector<cryptonote::blobdata> *txs = nullptr) const;
     /**

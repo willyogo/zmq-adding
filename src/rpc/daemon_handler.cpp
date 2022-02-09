@@ -454,7 +454,7 @@ if (!chain.find_blockchain_supplement(req.known_hashes, res.hashes, res.start_he
 
     res.info.mainnet = m_core.get_nettype() == MAINNET;
     res.info.testnet = m_core.get_nettype() == TESTNET;
-    res.info.stagenet = m_core.get_nettype() == STAGENET;
+    res.info.stagenet = m_core.get_nettype() == DEVNET;
     res.info.cumulative_difficulty = m_core.get_blockchain_storage().get_db().get_block_cumulative_difficulty(res.info.height - 1);
     res.info.block_size_limit = res.info.block_weight_limit = m_core.get_blockchain_storage().get_current_cumulative_block_weight_limit();
     res.info.block_size_median = res.info.block_weight_median = m_core.get_blockchain_storage().get_current_cumulative_block_weight_median();

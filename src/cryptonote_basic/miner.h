@@ -83,6 +83,7 @@ namespace cryptonote
     void pause();
     void resume();
     void do_print_hashrate(bool do_hr);
+    bool get_is_background_mining_enabled() const;
     uint64_t get_block_reward() const { return m_block_reward; }
 
   private:

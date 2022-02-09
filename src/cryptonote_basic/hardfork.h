@@ -40,7 +40,7 @@ namespace cryptonote
     uint8_t mnode_revision; // Mnode revision for enforcing non-blockchain-breaking mandatory mester node updates
     uint64_t height;
     time_t time;
-  };
+  }obj;
 
   // Stick your fake hard forks in here if you're into that sort of thing.
   extern std::vector<hard_fork> fakechain_hardforks;
@@ -70,6 +70,9 @@ namespace cryptonote
   //    hard_fork_ceil(14) == 14
   //    hard_fork_ceil(15) == 15
   uint8_t hard_fork_ceil(network_type type, uint8_t version);
+
+  uint8_t get_current_version() const;
+
 
   // Returns true if the given height is sufficiently high to be at or after the given hard fork
   // version.
