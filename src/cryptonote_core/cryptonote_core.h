@@ -256,6 +256,47 @@ namespace cryptonote
       * ones failed check the `tvc` values).
       */
      bool handle_parsed_txs(std::vector<tx_verification_batch_info> &parsed_txs, const tx_pool_options &opts, uint64_t *flash_rollback_height = nullptr);
+    
+     /**
+      * @brief handles an incoming uptime proof
+      *
+      * Parses an incoming uptime proof
+      *
+      * @return true if we haven't seen it before and thus need to relay.
+      */
+      bool handle_uptime_proof(const NOTIFY_UPTIME_PROOF::request &proof);
+
+     /**
+      * @brief handles an incoming transaction
+      *
+      * Parses an incoming transaction and, if nothing is obviously wrong,
+      * passes it along to the transaction pool
+      *
+      * @param tx_blob the tx to handle
+      * @param tvc metadata about the transaction's validity
+      * @param keeped_by_block if the transaction has been in a block
+      * @param relayed whether or not the transaction was relayed to us
+      * @param do_not_relay whether to prevent the transaction from being relayed
+      *
+      * @return true if the transaction was accepted, false otherwise
+      */
+     bool handle_incoming_tx(const blobdata& tx_blob, tx_verification_context& tvc, bool keeped_by_block, bool relayed, bool do_not_relay);
+
+     /**
+      * @brief handles a list of incoming transactions
+      *
+      * Parses incoming transactions and, if nothing is obviously wrong,
+      * passes them along to the transaction pool
+      *
+      * @param tx_blobs the txs to handle
+      * @param tvc metadata about the transactions' validity
+      * @param keeped_by_block if the transactions have been in a block
+      * @param relayed whether or not the transactions were relayed to us
+      * @param do_not_relay whether to prevent the transactions from being relayed
+      *
+      * @return true if the transactions were accepted, false otherwise
+      */
+     bool handle_incoming_txs(const std::vector<blobdata>& tx_blobs, std::vector<tx_verification_context>& tvc, bool keeped_by_block, bool relayed, bool do_not_relay);
 
      /**
       * Wrapper that does a parse + handle when nothing is needed between the parsing the handling.
