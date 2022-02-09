@@ -176,7 +176,7 @@ namespace cryptonote
 
     uint8_t get_current_hard_fork_version() const { 
       
-      return get_network_version(std::optional<uint64_t> height);
+      return get_network_version(std::optional<uint64_t> height = std::nullopt);
       }
 
     bool get_blocks_only(uint64_t start_offset, size_t count, std::vector<block>& blocks, std::vector<cryptonote::blobdata> *txs = nullptr) const;
