@@ -71,9 +71,6 @@ namespace cryptonote
   //    hard_fork_ceil(15) == 15
   uint8_t hard_fork_ceil(network_type type, uint8_t version);
 
-  uint8_t get_current_version() const;
-
-
   // Returns true if the given height is sufficiently high to be at or after the given hard fork
   // version.
   bool is_hard_fork_at_least(network_type type, uint8_t version, uint64_t height);
