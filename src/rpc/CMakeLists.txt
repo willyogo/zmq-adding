@@ -128,6 +128,6 @@ target_link_libraries(rpc_http_client
     common
     cpr::cpr
     extra)
-    target_include_directories(daemon_rpc_server PUBLIC ${ZMQ_INCLUDE_PATH})
-    target_include_directories(obj_daemon_rpc_server PUBLIC ${ZMQ_INCLUDE_PATH})
+    # target_include_directories(daemon_rpc_server PUBLIC ${ZMQ_INCLUDE_PATH})
+    # target_include_directories(obj_daemon_rpc_server PUBLIC ${ZMQ_INCLUDE_PATH})
     
