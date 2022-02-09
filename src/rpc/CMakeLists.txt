@@ -111,6 +111,8 @@ target_link_libraries(rpc
     extra)
 
 target_link_libraries(daemon_rpc_server
+  PUBLIC
+    cryptonote_core
   PRIVATE
     rpc_server_base
     rpc
