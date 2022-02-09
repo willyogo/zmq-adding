@@ -2775,7 +2775,7 @@ bool Blockchain::find_blockchain_supplement(const std::list<crypto::hash>& qbloc
     return false;
   }
 
-  m_db->block_wtxn_start(true);
+  m_db->block_wtxn_start();
   current_height = get_current_blockchain_height();
   const uint32_t pruning_seed = get_blockchain_pruning_seed();
   start_height = tools::get_next_unpruned_block_height(start_height, current_height, pruning_seed);
