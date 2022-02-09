@@ -35,6 +35,7 @@
 #include "cryptonote_basic/blobdatatype.h"
 #include "ringct/rctSigs.h"
 #include "version.h"
+#include "cryptonote_core/blockchain.h"
 
 namespace cryptonote
 {
@@ -141,7 +142,7 @@ namespace rpc
 
     auto& chain = m_core.get_blockchain_storage();
 
-if (!m_core.get_blockchain_storage().find_blockchain_supplement(req.known_hashes, res.hashes, res.start_height, res.current_height))
+if (!m_core.find_blockchain_supplement(req.known_hashes, res.hashes, res.start_height, res.current_height))
     {
       res.status = Message::STATUS_FAILED;
       res.error_details = "Blockchain::find_blockchain_supplement() returned false";
