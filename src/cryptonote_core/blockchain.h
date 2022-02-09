@@ -68,7 +68,7 @@
 struct sqlite3;
 namespace master_nodes { class master_node_list; };
 namespace tools { class Notify; }
-
+using namespace cryptonote;
 namespace cryptonote
 {
   struct block_and_checkpoint
