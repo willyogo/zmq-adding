@@ -171,8 +171,8 @@ namespace cryptonote
      *
      * @return the version
      */
-
-    cryptonote::network_type nettype = m_core.get_nettype();
+    core tmp_obj;
+    cryptonote::network_type nettype =tmp_obj.get_nettype();
     const uint64_t height = m_db->height();
 
     uint8_t get_current_hard_fork_version() const { return cryptonote::get_network_version(nettype, height); }

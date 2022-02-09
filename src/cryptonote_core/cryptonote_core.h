@@ -1299,6 +1299,6 @@ namespace cryptonote
 
      std::optional<oxenmq::TaggedThreadID> m_POS_thread_id;
    };
-}
+} 
 
 POP_WARNINGS
