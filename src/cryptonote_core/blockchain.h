@@ -817,7 +817,6 @@ namespace cryptonote
      * @brief Get the nettype
      * @return the nettype
      */
-    network_type nettype() const { return m_nettype; }
 
     /**
      * @brief set whether or not to show/print time statistics
