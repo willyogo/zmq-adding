@@ -103,6 +103,8 @@ target_link_libraries(rpc
     version
     cryptonote_protocol
     Boost::thread
+    ${Boost_REGEX_LIBRARY}
+    ${Boost_THREAD_LIBRARY}
     Boost::program_options
     OpenSSL::SSL
     extra)
@@ -113,6 +115,12 @@ target_link_libraries(daemon_rpc_server
     rpc_server_base
     rpc
     Boost::thread
+    ${Boost_CHRONO_LIBRARY}
+    ${Boost_REGEX_LIBRARY}
+    ${Boost_SYSTEM_LIBRARY}
+    ${Boost_THREAD_LIBRARY}
+    ${ZMQ_LIB}
+    ${EXTRA_LIBRARIES}
     extra)
 
 target_link_libraries(rpc_http_client
@@ -120,3 +128,6 @@ target_link_libraries(rpc_http_client
     common
     cpr::cpr
     extra)
+    target_include_directories(daemon_rpc_server PUBLIC ${ZMQ_INCLUDE_PATH})
+    target_include_directories(obj_daemon_rpc_server PUBLIC ${ZMQ_INCLUDE_PATH})
+    
