@@ -450,6 +450,14 @@ namespace cryptonote
       * Uninitializes the miner instance, oxenmq, transaction pool, and Blockchain
       */
      void deinit();
+     
+      /**
+      * @copydoc tx_memory_pool::get_transactions
+      * @param include_unrelayed_txes include unrelayed txes in result
+      *
+      * @note see tx_memory_pool::get_transactions
+      */
+     bool get_pool_transactions(std::vector<transaction>& txs, bool include_unrelayed_txes = true) const;
 
      /**
       * @brief sets to drop blocks downloaded (for testing)
