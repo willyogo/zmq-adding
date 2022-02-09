@@ -54,6 +54,7 @@
 #include "common/threadpool.h"
 #include "common/boost_serialization_helper.h"
 #include "epee/warnings.h"
+#include "epee/syncobj.h"
 #include "crypto/hash.h"
 #include "cryptonote_core.h"
 #include "ringct/rctSigs.h"
