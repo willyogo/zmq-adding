@@ -85,7 +85,6 @@ target_link_libraries(rpc_commands
   PUBLIC
     common
     cpr::cpr
-  PRIVATE
     cryptonote_protocol
     extra)
 
@@ -93,7 +92,6 @@ target_link_libraries(rpc_server_base
   PUBLIC
     common
     uWebSockets
-  PRIVATE
     extra)
 
 target_link_libraries(rpc
@@ -103,7 +101,6 @@ target_link_libraries(rpc
     rpc_server_base
     net
     version
-  PRIVATE
     cryptonote_protocol
     Boost::thread
     Boost::program_options
@@ -113,7 +110,6 @@ target_link_libraries(rpc
 target_link_libraries(daemon_rpc_server
   PUBLIC
     cryptonote_core
-  PRIVATE
     rpc_server_base
     rpc
     Boost::thread
@@ -123,5 +119,4 @@ target_link_libraries(rpc_http_client
   PUBLIC
     common
     cpr::cpr
-  PRIVATE
     extra)
