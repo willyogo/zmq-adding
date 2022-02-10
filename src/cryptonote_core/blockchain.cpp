@@ -1298,12 +1298,12 @@ bool Blockchain::validate_miner_transaction(const block& b, size_t cumulative_bl
     get_last_n_blocks_weights(last_blocks_weights, CRYPTONOTE_REWARD_BLOCKS_WINDOW);
     median_weight = epee::misc_utils::median(last_blocks_weights);
   }
-
+  auto nettype = m_nettype;
   uint64_t height                                = cryptonote::get_block_height(b);
   beldex_block_reward_context block_reward_context = {};
   block_reward_context.fee                       = fee;
   block_reward_context.height                    = height;
-  block_reward_context.testnet_override          = nettype() == TESTNET && height < 386000;
+  block_reward_context.testnet_override          = nettype == TESTNET && height < 386000;
   if (!calc_batched_governance_reward(height, block_reward_context.batched_governance))
   {
     MERROR_VER("Failed to calculate batched governance reward");
@@ -1323,7 +1323,7 @@ bool Blockchain::validate_miner_transaction(const block& b, size_t cumulative_bl
       return false;
   }
 
-  if (already_generated_coins != 0 && block_has_governance_output(nettype(), b))
+  if (already_generated_coins != 0 && block_has_governance_output(nettype, b))
   {
     if (version >= network_version_17_POS && reward_parts.governance_paid == 0)
     {
@@ -3857,7 +3857,7 @@ byte_and_output_fees Blockchain::get_dynamic_base_fee_estimate(uint64_t grace_bl
 bool Blockchain::is_output_spendtime_unlocked(uint64_t unlock_time) const
 {
   LOG_PRINT_L3("Blockchain::" << __func__);
-  return cryptonote::rules::is_output_unlocked(unlock_time, m_db->height(),nettype());
+  return cryptonote::rules::is_output_unlocked(unlock_time, m_db->height(),nettype);
 }
 //------------------------------------------------------------------
 // This function locates all outputs associated with a given input (mixins)
@@ -5023,7 +5023,7 @@ bool Blockchain::calc_batched_governance_reward(uint64_t height, uint64_t &rewar
     return true;
   }
 
-  if (!height_has_governance_output(nettype(), hard_fork_version, height))
+  if (!height_has_governance_output(m_nettype, hard_fork_version, height))
   {
     return true;
   }
@@ -5039,7 +5039,7 @@ bool Blockchain::calc_batched_governance_reward(uint64_t height, uint64_t &rewar
   // 0 if it's not time to pay out the batched payments (in which case we
   // already returned, above).
 
-  size_t num_blocks = cryptonote::get_config(nettype()).GOVERNANCE_REWARD_INTERVAL_IN_BLOCKS;
+  size_t num_blocks = cryptonote::get_config(m_nettype).GOVERNANCE_REWARD_INTERVAL_IN_BLOCKS;
 
   // governance reward starting at HF17
   if (hard_fork_version >= network_version_17_POS)
@@ -5065,7 +5065,7 @@ bool Blockchain::calc_batched_governance_reward(uint64_t height, uint64_t &rewar
   for (const auto &block : blocks)
   {
     if (block.major_version >= network_version_10_bulletproofs)
-      reward += derive_governance_from_block_reward(nettype(), block, hard_fork_version);
+      reward += derive_governance_from_block_reward(m_nettype, block, hard_fork_version);
   }
 
   return true;
