@@ -30,6 +30,7 @@
 
 #include "cryptonote_basic/cryptonote_basic.h"
 #include <mutex>
+#include "epee/syncobj.h"
 
 namespace cryptonote
 {
