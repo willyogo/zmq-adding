@@ -734,7 +734,7 @@ bool POS::convert_time_to_round(POS::time_point const &time, POS::time_point con
 bool POS::get_round_timings(cryptonote::Blockchain const &blockchain, uint64_t block_height, uint64_t prev_timestamp, POS::timings &times)
 {
   times = {};
-  auto hf17 = hard_fork_begins(blockchain.nettype(), cryptonote::network_version_17_POS);
+  auto hf17 = hard_fork_begins(blockchain.nettype, cryptonote::network_version_17_POS);
   if (!hf17 || blockchain.get_current_blockchain_height() < *hf17)
     return false;
 
@@ -1166,7 +1166,7 @@ round_state prepare_for_round(round_context &context, master_nodes::master_node_
   crypto::public_key const &block_leader  = blockchain.get_master_node_list().get_block_leader().key;
 
   context.prepare_for_round.quorum =
-      master_nodes::generate_POS_quorum(blockchain.nettype(),
+      master_nodes::generate_POS_quorum(blockchain.nettype,
                                            block_leader,
                                            hf_version,
                                            active_node_list,
