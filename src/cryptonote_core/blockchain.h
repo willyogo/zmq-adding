@@ -65,6 +65,7 @@
 #include "cryptonote_core/beldex_name_system.h"
 #include "pos.h"
 #include "cryptonote_core/master_node_quorum_cop.h"
+#include "hardfork.h"
 
 struct sqlite3;
 namespace master_nodes { class master_node_list; };
