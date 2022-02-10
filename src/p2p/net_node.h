@@ -391,7 +391,7 @@ namespace nodetool
     size_t get_incoming_connections_count(network_zone&);
     size_t get_outgoing_connections_count();
     size_t get_outgoing_connections_count(network_zone&);
-    peerlist_manager& get_peerlist_manager(){return m_peerlist;}
+    peerlist_manager& get_peerlist_manager(){return peerlist_manager m_peerlist;}
 
 
     bool check_connection_and_handshake_with_peer(const epee::net_utils::network_address& na, uint64_t last_seen_stamp);
