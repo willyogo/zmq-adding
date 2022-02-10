@@ -60,7 +60,8 @@ add_library(cryptonote_basic
   tx_extra.cpp)
 
 target_link_libraries(cryptonote_basic
-  hardfork
+  PUBLIC
+    hardfork
   PRIVATE
     common
     device
