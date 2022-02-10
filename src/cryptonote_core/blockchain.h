@@ -1297,7 +1297,7 @@ namespace cryptonote
     difficulty_type get_difficulty_for_alternative_chain(const std::list<block_extended_info>& alt_chain, uint64_t height, bool ) const;
     
 
-    uint8_t get_current_version() const;
+    // uint8_t get_current_version() const;
     /**
      * @brief gets the current hardfork version in use/voted for
      *
