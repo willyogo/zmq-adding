@@ -114,7 +114,7 @@ get_hard_fork_heights(network_type nettype, uint8_t version) {
 }
 
 cryptonote::hard_fork index;
-uint8_t get_current_version() const
+uint8_t get_current_version()
 {
   CRITICAL_REGION_LOCAL(lock);
   return height[index.current_fork_index].version;
