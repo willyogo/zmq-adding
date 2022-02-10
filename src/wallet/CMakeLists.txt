@@ -56,18 +56,18 @@ target_link_libraries(wallet
     OpenSSL::Crypto
     extra)
 
-beldex_add_executable(wallet_rpc_server "beldex-wallet-rpc"
-  wallet_rpc_server.cpp
-  wallet_rpc_server_commands_defs.cpp
-  )
+# beldex_add_executable(wallet_rpc_server "beldex-wallet-rpc"
+#   wallet_rpc_server.cpp
+#   wallet_rpc_server_commands_defs.cpp
+#   )
 
-target_link_libraries(wallet_rpc_server
-  PRIVATE
-    rpc_server_base
-    wallet
-    daemonizer
-    Boost::program_options
-    extra)
+# target_link_libraries(wallet_rpc_server
+#   PRIVATE
+#     rpc_server_base
+#     wallet
+#     daemonizer
+#     Boost::program_options
+#     extra)
 
 
 add_subdirectory(api)
