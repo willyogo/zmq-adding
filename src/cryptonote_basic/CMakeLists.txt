@@ -55,11 +55,12 @@ add_library(cryptonote_basic
   cryptonote_basic_impl.cpp
   cryptonote_format_utils.cpp
   difficulty.cpp
-  hardfork.cpp
+  # hardfork.cpp
   miner.cpp
   tx_extra.cpp)
 
 target_link_libraries(cryptonote_basic
+  hardfork
   PRIVATE
     common
     device
