@@ -117,7 +117,7 @@ cryptonote::hard_fork index;
 // uint8_t get_current_version();
 uint8_t get_current_version()
 {
-  CRITICAL_REGION_LOCAL(lock);
+  // CRITICAL_REGION_LOCAL(lock);
   return height[index.current_fork_index].version;
 }
 
