@@ -43,7 +43,6 @@ namespace cryptonote
     time_t time;
     uint32_t current_fork_index;
   };
-  uint8_t get_current_version();
   // Stick your fake hard forks in here if you're into that sort of thing.
   extern std::vector<hard_fork> fakechain_hardforks;
 

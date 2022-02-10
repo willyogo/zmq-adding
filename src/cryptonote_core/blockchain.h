@@ -1268,6 +1268,8 @@ namespace cryptonote
      *
      * @return true if the block was added successfully, otherwise false
      */
+    uint64_t get_difficulty_target();
+
     bool handle_alternative_block(const block& b, const crypto::hash& id, block_verification_context& bvc, checkpoint_t const *checkpoint);
 
     /**
@@ -1291,8 +1293,18 @@ namespace cryptonote
      *
      * @return the difficulty requirement
      */
-    difficulty_type get_difficulty_for_alternative_chain(const std::list<block_extended_info>& alt_chain, uint64_t height, bool ) const;
 
+    difficulty_type get_difficulty_for_alternative_chain(const std::list<block_extended_info>& alt_chain, uint64_t height, bool ) const;
+    
+
+    uint8_t get_current_version() const;
+    /**
+     * @brief gets the current hardfork version in use/voted for
+     *
+     * @return the version
+     */
+    uint8_t get_current_hard_fork_version() { return get_current_version(); }
+    
     /**
      * @brief sanity checks a miner transaction before validating an entire block
      *
