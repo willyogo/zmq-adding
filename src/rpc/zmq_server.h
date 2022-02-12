@@ -75,6 +75,7 @@ class ZmqServer
     boost::thread run_thread;
 
     std::unique_ptr<zmq::socket_t> rep_socket;
+
 };
 
 

@@ -38,7 +38,7 @@
 #include <sstream>
 #include <iomanip>
 #include <oxenmq/base32z.h>
-
+#include <vector>
 extern "C" {
 #include <sodium.h>
 #ifdef ENABLE_SYSTEMD
@@ -72,12 +72,14 @@ extern "C" {
 #include "epee/memwipe.h"
 #include "common/i18n.h"
 #include "epee/net/local_ip.h"
+#include "epee/syncobj.h"
 
 #include "common/beldex_integration_test_hooks.h"
 
 #undef BELDEX_DEFAULT_LOG_CATEGORY
 #define BELDEX_DEFAULT_LOG_CATEGORY "cn"
-
+#define BULLETPROOF_MAX_OUTPUT 16
+#define  CRITICAL_REGION_LOCAL_1(x) {boost::this_thread::sleep_for(boost::chrono::milliseconds(epee::debug::g_test_dbg_lock_sleep()));}   epee::critical_region_t<decltype(x)>   critical_region_var(x)
 DISABLE_VS_WARNINGS(4355)
 
 #define MERROR_VER(x) MCERROR("verify", x)
@@ -1138,6 +1140,102 @@ namespace cryptonote
     return m_test_drop_download;
   }
   //-----------------------------------------------------------------------------------------------
+  bool core::handle_incoming_tx_accumulated_batch(std::vector<tx_verification_batch_info_1> &tx_info, bool keeped_by_block)
+  {
+    bool ret = true;
+    if (keeped_by_block && get_blockchain_storage().is_within_compiled_block_hash_area())
+    {
+      MTRACE("Skipping semantics check for tx kept by block in embedded hash area");
+      return true;
+    }
+
+    std::vector<const rct::rctSig*> rvv;
+    for (size_t n = 0; n < tx_info.size(); ++n)
+    {
+      if (!check_tx_semantic(*tx_info[n].tx, keeped_by_block))
+      {
+        set_semantics_failed(tx_info[n].tx_hash);
+        tx_info[n].tvc.m_verifivation_failed = true;
+        tx_info[n].result = false;
+        continue;
+      }
+      // auto a =static_cast<int>(cryptonote::txversion::v2_ringct);
+      if (tx_info[n].tx->version < cryptonote::txversion::v2_ringct)
+        continue;
+      if (get_type() != transaction::type_standard)
+        continue;
+      const rct::rctSig &rv = tx_info[n].tx->rct_signatures;
+      switch (rv.type) {
+        case rct::RCTType::Null:
+          // coinbase should not come here, so we reject for all other types
+          MERROR_VER("Unexpected Null rctSig type");
+          set_semantics_failed(tx_info[n].tx_hash);
+          tx_info[n].tvc.m_verifivation_failed = true;
+          tx_info[n].result = false;
+          break;
+        case rct::RCTType::Simple:
+          if (!rct::verRctSemanticsSimple(rv))
+          {
+            MERROR_VER("rct signature semantics check failed");
+            set_semantics_failed(tx_info[n].tx_hash);
+            tx_info[n].tvc.m_verifivation_failed = true;
+            tx_info[n].result = false;
+            break;
+          }
+          break;
+        case rct::RCTType::Full:
+          if (!rct::verRct(rv, true))
+          {
+            MERROR_VER("rct signature semantics check failed");
+            set_semantics_failed(tx_info[n].tx_hash);
+            tx_info[n].tvc.m_verifivation_failed = true;
+            tx_info[n].result = false;
+            break;
+          }
+          break;
+        case rct::RCTType::Bulletproof:
+        case rct::RCTType::Bulletproof2:
+          if (!is_canonical_bulletproof_layout(rv.p.bulletproofs))
+          {
+            MERROR_VER("Bulletproof does not have canonical form");
+            set_semantics_failed(tx_info[n].tx_hash);
+            tx_info[n].tvc.m_verifivation_failed = true;
+            tx_info[n].result = false;
+            break;
+          }
+          rvv.push_back(&rv); // delayed batch verification
+          break;
+        default:
+          // MERROR_VER("Unknown rct type: " << rv.type);
+          set_semantics_failed(tx_info[n].tx_hash);
+          tx_info[n].tvc.m_verifivation_failed = true;
+          tx_info[n].result = false;
+          break;
+      }
+    }
+    if (!rvv.empty() && !rct::verRctSemanticsSimple(rvv))
+    {
+      LOG_PRINT_L1("One transaction among this group has bad semantics, verifying one at a time");
+      ret = false;
+      const bool assumed_bad = rvv.size() == 1; // if there's only one tx, it must be the bad one
+      for (size_t n = 0; n < tx_info.size(); ++n)
+      {
+        if (!tx_info[n].result)
+          continue;
+        if (tx_info[n].tx->rct_signatures.type != rct::RCTType::Bulletproof && tx_info[n].tx->rct_signatures.type != rct::RCTType::Bulletproof2)
+          continue;
+        if (assumed_bad || !rct::verRctSemanticsSimple(tx_info[n].tx->rct_signatures))
+        {
+          set_semantics_failed(tx_info[n].tx_hash);
+          tx_info[n].tvc.m_verifivation_failed = true;
+          tx_info[n].result = false;
+        }
+      }
+    }
+
+    return ret;
+  }
+  //-----------------------------------------------------------------------------------------------
   bool core::get_test_drop_download_height() const
   {
     if (m_test_drop_download_height == 0)
@@ -1199,7 +1297,7 @@ namespace cryptonote
     if (proofs.size() != 1)
       return false;
     const size_t sz = proofs[0].V.size();
-    if (sz == 0 || sz > BULLETPROOF_MAX_OUTPUTS)
+    if (sz == 0 || sz > BULLETPROOF_MAX_OUTPUT)
       return false;
     return true;
   }
@@ -1394,12 +1492,178 @@ namespace cryptonote
     return ok;
   }
   //-----------------------------------------------------------------------------------------------
+  bool core::handle_incoming_tx_pre(const blobdata& tx_blob, tx_verification_context& tvc, cryptonote::transaction &tx, crypto::hash &tx_hash, crypto::hash &tx_prefixt_hash, bool keeped_by_block, bool relayed, bool do_not_relay)
+  {
+    tvc = tx_verification_context();
+
+    if(tx_blob.size() > get_max_tx_size())
+    {
+      LOG_PRINT_L1("WRONG TRANSACTION BLOB, too big size " << tx_blob.size() << ", rejected");
+      tvc.m_verifivation_failed = true;
+      tvc.m_too_big = true;
+      return false;
+    }
+
+    tx_hash = crypto::null_hash;
+    tx_prefixt_hash = crypto::null_hash;
+
+    if(!parse_tx_from_blob(tx, tx_hash, tx_prefixt_hash, tx_blob))
+    {
+      LOG_PRINT_L1("WRONG TRANSACTION BLOB, Failed to parse, rejected");
+      tvc.m_verifivation_failed = true;
+      return false;
+    }
+    //std::cout << "!"<< tx.vin.size() << std::endl;
+
+    bad_semantics_txes_lock.lock();
+    for (int idx = 0; idx < 2; ++idx)
+    {
+      if (bad_semantics_txes[idx].find(tx_hash) != bad_semantics_txes[idx].end())
+      {
+        bad_semantics_txes_lock.unlock();
+        LOG_PRINT_L1("Transaction already seen with bad semantics, rejected");
+        tvc.m_verifivation_failed = true;
+        return false;
+      }
+    }
+    bad_semantics_txes_lock.unlock();
+    return true;
+  }
+  //-----------------------------------------------------------------------------------------------
   std::vector<core::tx_verification_batch_info> core::handle_incoming_txs(const std::vector<blobdata>& tx_blobs, const tx_pool_options &opts)
   {
     auto lock = incoming_tx_lock();
     auto parsed = parse_incoming_txs(tx_blobs, opts);
     handle_parsed_txs(parsed, opts);
     return parsed;
+  }
+  //-----------------------------------------------------------------------------------------------
+  bool core::handle_incoming_txs(const std::vector<blobdata>& tx_blobs, std::vector<tx_verification_context>& tvc, bool keeped_by_block, bool relayed, bool do_not_relay)
+  {
+    TRY_ENTRY();
+    CRITICAL_REGION_LOCAL_1(m_incoming_tx_lock);
+
+    struct result { bool res; cryptonote::transaction tx; crypto::hash hash; crypto::hash prefix_hash; };
+    std::vector<result> results(tx_blobs.size());
+
+    tvc.resize(tx_blobs.size());
+    tools::threadpool& tpool = tools::threadpool::getInstance();
+    tools::threadpool::waiter waiter;
+    std::vector<blobdata>::const_iterator it = tx_blobs.begin();
+    for (size_t i = 0; i < tx_blobs.size(); i++, ++it) {
+      tpool.submit(&waiter, [&, i, it] {
+        try
+        {
+          results[i].res = handle_incoming_tx_pre(*it, tvc[i], results[i].tx, results[i].hash, results[i].prefix_hash, keeped_by_block, relayed, do_not_relay);
+        }
+        catch (const std::exception &e)
+        {
+          MERROR_VER("Exception in handle_incoming_tx_pre: " << e.what());
+          results[i].res = false;
+        }
+      });
+    }
+    waiter.wait(&tpool);
+    it = tx_blobs.begin();
+    std::vector<bool> already_have(tx_blobs.size(), false);
+    for (size_t i = 0; i < tx_blobs.size(); i++, ++it) {
+      if (!results[i].res)
+        continue;
+      if(m_mempool.have_tx(results[i].hash))
+      {
+        LOG_PRINT_L2("tx " << results[i].hash << "already have transaction in tx_pool");
+        already_have[i] = true;
+      }
+      else if(m_blockchain_storage.have_tx(results[i].hash))
+      {
+        LOG_PRINT_L2("tx " << results[i].hash << " already have transaction in blockchain");
+        already_have[i] = true;
+      }
+      else
+      {
+        tpool.submit(&waiter, [&, i, it] {
+          try
+          {
+            results[i].res = handle_incoming_tx_post(*it, tvc[i], results[i].tx, results[i].hash, results[i].prefix_hash, keeped_by_block, relayed, do_not_relay);
+          }
+          catch (const std::exception &e)
+          {
+            MERROR_VER("Exception in handle_incoming_tx_post: " << e.what());
+            results[i].res = false;
+          }
+        });
+      }
+    }
+    waiter.wait(&tpool);
+
+    std::vector<tx_verification_batch_info_1> tx_info;
+    tx_info.reserve(tx_blobs.size());
+    for (size_t i = 0; i < tx_blobs.size(); i++) {
+      if (!results[i].res || already_have[i])
+        continue;
+      tx_info.push_back({&results[i].tx, results[i].hash, tvc[i], results[i].res});
+    }
+    if (!tx_info.empty())
+      handle_incoming_tx_accumulated_batch(tx_info, keeped_by_block);
+
+    bool ok = true;
+    it = tx_blobs.begin();
+    for (size_t i = 0; i < tx_blobs.size(); i++, ++it) {
+      if (!results[i].res)
+      {
+        ok = false;
+        continue;
+      }
+      if (keeped_by_block)
+        get_blockchain_storage().on_new_tx_from_block(results[i].tx);
+      if (already_have[i])
+        continue;
+
+      const size_t weight = get_transaction_weight(results[i].tx, it->size());
+      ok &= add_new_tx(results[i].tx, results[i].hash, tx_blobs[i], results[i].prefix_hash, weight, tvc[i], keeped_by_block, relayed, do_not_relay);
+      if(tvc[i].m_verifivation_failed)
+      {
+        MERROR_VER("Transaction verification failed: " << results[i].hash);
+      }
+      else if(tvc[i].m_verifivation_impossible)
+      {
+        MERROR_VER("Transaction verification impossible: " << results[i].hash);
+      }
+
+      if(tvc[i].m_added_to_pool)
+        MDEBUG("tx added: " << results[i].hash);
+    }
+    return ok;
+
+    CATCH_ENTRY_L0("core::handle_incoming_txs()", false);
+  }
+  //-----------------------------------------------------------------------------------------------
+  bool core::add_new_tx(transaction& tx, const crypto::hash& tx_hash, const cryptonote::blobdata &blob, const crypto::hash& tx_prefix_hash, size_t tx_weight, tx_verification_context& tvc, bool keeped_by_block, bool relayed, bool do_not_relay)
+  {
+    if(m_mempool.have_tx(tx_hash))
+    {
+      LOG_PRINT_L2("tx " << tx_hash << "already have transaction in tx_pool");
+      return true;
+    }
+
+    if(m_blockchain_storage.have_tx(tx_hash))
+    {
+      LOG_PRINT_L2("tx " << tx_hash << " already have transaction in blockchain");
+      return true;
+    }
+
+    uint8_t version = cryptonote::network_version_17_POS;
+    return m_mempool.add_tx(tx, tx_hash, blob, tx_weight, tvc, tx_pool_options::from_block(), version);
+  }
+  //-----------------------------------------------------------------------------------------------
+  bool core::handle_incoming_tx(const blobdata& tx_blob, tx_verification_context& tvc, bool keeped_by_block, bool relayed, bool do_not_relay)
+  {
+    std::vector<cryptonote::blobdata> tx_blobs;
+    tx_blobs.push_back(tx_blob);
+    std::vector<tx_verification_context> tvcv(1);
+    bool r = handle_incoming_txs(tx_blobs, tvcv, keeped_by_block, relayed, do_not_relay);
+    tvc = tvcv[0];
+    return r;
   }
   //-----------------------------------------------------------------------------------------------
   bool core::handle_incoming_tx(const blobdata& tx_blob, tx_verification_context& tvc, const tx_pool_options &opts)
@@ -1541,6 +1805,11 @@ namespace cryptonote
     }
 
     return results;
+  }
+
+  bool core::parse_tx_from_blob(transaction& tx, crypto::hash& tx_hash, crypto::hash& tx_prefix_hash, const blobdata& blob) const
+  {
+    return parse_and_validate_tx_from_blob(blob, tx, tx_hash, tx_prefix_hash);
   }
 
   int core::add_flashes(const std::vector<std::shared_ptr<flash_tx>> &flashes)

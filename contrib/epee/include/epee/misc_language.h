@@ -52,7 +52,7 @@ namespace epee
 		return ret_val; \
 	}
 
-#define AUTO_VAL_INIT(v)   boost::value_initialized<decltype(v)>()
+// #define AUTO_VAL_INIT(v)   boost::value_initialized<decltype(v)>()
 
 namespace misc_utils
 {

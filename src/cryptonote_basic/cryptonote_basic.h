@@ -165,10 +165,14 @@ namespace cryptonote
 
   };
 
+  inline int get_type();
+
   // Flahs quorum statuses.  Note that the underlying numeric values is used in the RPC.  `none` is
   // only used in places like the RPC where we return a value even if not a flash at all.
   enum class flash_result { none = 0, rejected, accepted, timeout };
-
+    bool is_deregister; // not used after version >= version_4_tx_types
+    uint16_t type;
+   
   class transaction_prefix
   {
 
@@ -183,6 +187,8 @@ namespace cryptonote
     // tx information
     txversion version;
     txtype type;
+    size_t _version;
+    
 
     bool is_transfer() const { return type == txtype::standard || type == txtype::stake || type == txtype::beldex_name_system; }
 
@@ -192,7 +198,21 @@ namespace cryptonote
     std::vector<tx_out> vout;
     std::vector<uint8_t> extra;
     std::vector<uint64_t> output_unlock_times;
-
+    
+    enum type_t
+    {
+      type_standard,
+      type_deregister,
+      type_key_image_unlock,
+      type_count,
+      
+    };
+     
+// union
+//     {
+//       bool is_deregister; // not used after version >= version_4_tx_types
+//       uint16_t type;
+//     };
     BEGIN_SERIALIZE()
       ENUM_FIELD(version, version >= txversion::v1 && version < txversion::_count);
       if (version >= txversion::v3_per_output_unlock_times)
@@ -213,7 +233,7 @@ namespace cryptonote
       if (version >= txversion::v4_tx_types)
         ENUM_FIELD_N("type", type, type < txtype::_count);
     END_SERIALIZE()
-
+    
     transaction_prefix() { set_null(); }
     void set_null();
 
@@ -248,7 +268,8 @@ namespace cryptonote
     // hash cache
     mutable crypto::hash hash;
     mutable size_t blob_size;
-
+    
+    
     bool pruned;
 
     std::atomic<unsigned int> unprunable_size;
@@ -513,6 +534,23 @@ namespace cryptonote
   // tests can still use particular hard forks without needing to actually generate pre-v4 txes.
   namespace hack { inline bool test_suite_permissive_txes = false; }
 
+  inline int get_type()
+  {
+    size_t version{};
+    auto a = static_cast<int>(cryptonote::txversion::v2_ringct);
+    if (version <= a)
+      return transaction_prefix::type_standard;
+auto b = static_cast<int>(cryptonote::txversion::v3_per_output_unlock_times);
+    if (version == a)
+    { 
+      if (is_deregister) return transaction_prefix::type_deregister;
+      return transaction_prefix::type_standard;
+    }
+
+    // NOTE(beldex): Type is range checked on deserialisation, so hitting this is a developer error
+    // auto const a = static_assert(static_cast<const uint16_t>(type) < static_cast<uint16_t>(transaction_prefix::type_count));
+    return static_cast<transaction::type_t>(type);
+  }
   inline txversion transaction_prefix::get_max_version_for_hf(uint8_t hf_version)
   {
     if (!hack::test_suite_permissive_txes) {

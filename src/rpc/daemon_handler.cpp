@@ -142,7 +142,7 @@ namespace rpc
 
     auto& chain = m_core.get_blockchain_storage();
 
-if (!m_core.find_blockchain_supplement(req.known_hashes, res.hashes, res.start_height, res.current_height))
+if (!chain.find_blockchain_supplement(req.known_hashes, res.hashes, res.start_height, res.current_height))
     {
       res.status = Message::STATUS_FAILED;
       res.error_details = "Blockchain::find_blockchain_supplement() returned false";
@@ -266,8 +266,8 @@ if (!m_core.find_blockchain_supplement(req.known_hashes, res.hashes, res.start_h
   {
     auto tx_blob = cryptonote::tx_to_blob(req.tx);
 
-    cryptonote_connection_context fake_context = AUTO_VAL_INIT(fake_context);
-    tx_verification_context tvc = AUTO_VAL_INIT(tvc);
+    cryptonote_connection_context fake_context {};
+    tx_verification_context tvc = ATOMIC_VAR_INIT(tvc);
 
     if(!m_core.handle_incoming_tx(tx_blob, tvc, false, false, !req.relay) || tvc.m_verifivation_failed)
     {
@@ -408,8 +408,7 @@ if (!m_core.find_blockchain_supplement(req.known_hashes, res.hashes, res.start_h
 
     boost::thread::attributes attrs;
     attrs.set_stack_size(THREAD_STACK_SIZE);
-
-    if(!m_core.get_miner().start(info.address, static_cast<size_t>(req.threads_count), attrs, req.do_background_mining, req.ignore_battery))
+    if(!m_core.get_miner().start(info.address, static_cast<size_t>(req.threads_count), attrs, req.do_background_mining))
     {
       res.error_details = "Failed, mining not started";
       LOG_PRINT_L0(res.error_details);

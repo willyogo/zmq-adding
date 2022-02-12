@@ -1,0 +1,9 @@
+make --dry-run --always-make --keep-going --print-directory
+make: Entering directory '/home/leninkumar/projects/lws-beldex-source'
+mkdir -p build/"Linux/continue"/release
+cd build/"Linux/continue"/release && cmake -D BUILD_TESTS=OFF -DMANUAL_SUBMODULES=1 -D CMAKE_BUILD_TYPE=Release ../../../.. && make
+make: Leaving directory '/home/leninkumar/projects/lws-beldex-source'
+ 
+/bin/sh: 1: cd: can't cd to build/Linux/continue/release
+make: *** [Makefile:104: release-all] Error 2
+ 

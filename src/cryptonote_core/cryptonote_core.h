@@ -475,9 +475,39 @@ namespace cryptonote
       *
       * @note see tx_memory_pool::get_transactions
       */
-     bool get_pool_transactions(std::vector<transaction>& txs, bool include_unrelayed_txes = true) const;
+    //  bool get_pool_transactions(std::vector<transaction>& txs, bool include_unrelayed_txes = true) const;
      bool get_pool_transactions(std::vector<transaction>& txs) const;
      
+     /**
+      * @brief handles an incoming transaction
+      *
+      * Parses an incoming transaction and, if nothing is obviously wrong,
+      * passes it along to the transaction pool
+      *
+      * @param tx_blob the tx to handle
+      * @param tvc metadata about the transaction's validity
+      * @param keeped_by_block if the transaction has been in a block
+      * @param relayed whether or not the transaction was relayed to us
+      * @param do_not_relay whether to prevent the transaction from being relayed
+      *
+      * @return true if the transaction was accepted, false otherwise
+      */
+     bool handle_incoming_tx(const blobdata& tx_blob, tx_verification_context& tvc, bool keeped_by_block, bool relayed, bool do_not_relay);
+     /**
+      * @brief handles a list of incoming transactions
+      *
+      * Parses incoming transactions and, if nothing is obviously wrong,
+      * passes them along to the transaction pool
+      *
+      * @param tx_blobs the txs to handle
+      * @param tvc metadata about the transactions' validity
+      * @param keeped_by_block if the transactions have been in a block
+      * @param relayed whether or not the transactions were relayed to us
+      * @param do_not_relay whether to prevent the transactions from being relayed
+      *
+      * @return true if the transactions were accepted, false otherwise
+      */
+    //  bool handle_incoming_txs(const std::vector<blobdata>& tx_blobs, std::vector<tx_verification_context>& tvc, bool keeped_by_block, bool relayed, bool do_not_relay);
      /**
       * @brief gets whether or not to drop blocks
       *
@@ -1022,6 +1052,7 @@ namespace cryptonote
       * @return true
       */
      bool relay_txpool_transactions();
+     bool add_new_tx(transaction& tx, const crypto::hash& tx_hash, const cryptonote::blobdata &blob, const crypto::hash& tx_prefix_hash, size_t tx_weight, tx_verification_context& tvc, bool keeped_by_block, bool relayed, bool do_not_relay);
 
      /**
       * @brief returns the beldexd config directory
@@ -1029,14 +1060,19 @@ namespace cryptonote
      const fs::path& get_config_directory() const { return m_config_folder; }
 
  private:
-
+      tx_memory_pool m_mempool;
      /**
       * @copydoc Blockchain::add_new_block
       *
       * @note see Blockchain::add_new_block
       */
      bool add_new_block(const block& b, block_verification_context& bvc, checkpoint_t const *checkpoint);
-
+    /**
+      * @copydoc parse_tx_from_blob(transaction&, crypto::hash&, crypto::hash&, const blobdata&) const
+      *
+      * @note see parse_tx_from_blob(transaction&, crypto::hash&, crypto::hash&, const blobdata&) const
+      */
+     bool parse_tx_from_blob(transaction& tx, crypto::hash& tx_hash, crypto::hash& tx_prefix_hash, const blobdata& blob) const;
      /**
       * @brief validates some simple properties of a transaction
       *
@@ -1077,7 +1113,7 @@ namespace cryptonote
       * @return false if any key image is repeated, otherwise true
       */
      bool check_tx_inputs_keyimages_diff(const transaction& tx) const;
-
+    
      /**
       * @brief verify that each ring uses distinct members
       *
@@ -1086,6 +1122,13 @@ namespace cryptonote
       * @return false if any ring uses duplicate members, true otherwise
       */
      bool check_tx_inputs_ring_members_diff(const transaction& tx) const;
+
+     bool handle_incoming_tx_pre(const blobdata& tx_blob, tx_verification_context& tvc, cryptonote::transaction &tx, crypto::hash &tx_hash, crypto::hash &tx_prefixt_hash, bool keeped_by_block, bool relayed, bool do_not_relay);
+     bool handle_incoming_tx_post(const blobdata& tx_blob, tx_verification_context& tvc, cryptonote::transaction &tx, crypto::hash &tx_hash, crypto::hash &tx_prefixt_hash, bool keeped_by_block, bool relayed, bool do_not_relay);
+     struct tx_verification_batch_info_1 { const cryptonote::transaction *tx; crypto::hash tx_hash; tx_verification_context &tvc; bool &result; };
+     bool handle_incoming_tx_accumulated_batch(std::vector<tx_verification_batch_info_1> &tx_info, bool keeped_by_block);
+     static bool is_canonical_bulletproof_layout(const std::vector<rct::Bulletproof> &proofs);
+     bool handle_incoming_txs(const std::vector<blobdata>& tx_blobs, std::vector<tx_verification_context>& tvc, bool keeped_by_block, bool relayed, bool do_not_relay);
 
      /**
       * @brief verify that each input key image in a transaction is in
@@ -1173,7 +1216,7 @@ namespace cryptonote
 
      uint64_t m_test_drop_download_height = 0; //!< height under which to drop incoming blocks, if doing so
 
-     tx_memory_pool m_mempool; //!< transaction pool instance
+    //  tx_memory_pool m_mempool; //!< transaction pool instance
      Blockchain m_blockchain_storage; //!< Blockchain instance
 
      master_nodes::master_node_list m_master_node_list;

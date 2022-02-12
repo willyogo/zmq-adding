@@ -465,7 +465,7 @@ namespace cryptonote
       for (auto& notify : m_tx_notify)
         notify(id, tx, blob, opts);
 
-    prune(id);
+    prune(id);                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                          
 
     return true;
   }

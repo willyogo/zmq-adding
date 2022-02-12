@@ -77,5 +77,6 @@
         "concepts": "cpp",
         "numbers": "cpp",
         "stop_token": "cpp"
-    }
+    },
+    "C_Cpp.errorSquiggles": "Enabled"
 }
